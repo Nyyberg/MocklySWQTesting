@@ -1,208 +1,300 @@
-﻿
-Given(/^The current dictionary has 10 elements in it$/, () => {
-	return true;
-});
+﻿using System.Text;
+using Newtonsoft.Json.Linq;
+using Infrastructure.Entities;
+using Assert = Xunit.Assert;
 
-Then(/^The String parent is empty$/, () => {
-	return true;
-});
+namespace TestProject.StepDefinitions
+{
+    [Binding]
+    public class DictionaryFeatureSteps
+    {
+        private ResponseObject _responseObject = new ResponseObject();
+        private CustomObject _customObject;
+        private ResponseObjectDto _responseObjectDto;
+        
+        public DictionaryFeatureSteps()
+        {
+            _responseObject.Data = Encoding.UTF8.GetBytes("{}");
+            _responseObjectDto = new ResponseObjectDto(_responseObject);
+        }
+        
+        // ------------------------- Add Elements To Dictionary -------------------------
+        
+        private Dictionary<string, CustomObject> _dictionary;
+        private string _parent;
+        private JToken? _jToken;
+        
+        [Given(@"The current dictionary has (\d+) elements in it")]
+        public void GivenTheCurrentDictionaryHasElementsInIt(int elementCount)
+        {
+            _dictionary = new Dictionary<string, CustomObject>();
+            for (int i = 0; i < elementCount; i++)
+            {
+                _dictionary.Add($"Key{i}", new CustomObject(i));
+            }
+        }
 
-When(/^I give an Valid JToken$/, () => {
-	return true;
-});
+        [Given(@"The String parent is empty")]
+        public void GivenTheStringParentIsEmpty()
+        {
+            _parent = string.Empty;
+        }
 
-Then(/^The JToken should be added to the dictionary$/, () => {
-	return true;
-});
+        [Given(@"The String parent is filled")]
+        public void GivenTheStringParentIsFilled()
+        {
+            _parent = "ParentValue";
+        }
 
-Given(/^The current dictionary has 10 elements in it$/, () => {
-	return true;
-});
+        [When(@"I give an Valid JToken")]
+        public void WhenIGiveAnValidJToken()
+        {
+            _jToken = JToken.FromObject(new CustomObject(1));
+        }
 
-Then(/^The String parent is empty$/, () => {
-	return true;
-});
+        [When(@"I give an Invalid JToken")]
+        public void WhenIGiveAnInvalidJToken()
+        {
+            _jToken = null;
+        }
+        
+        [When(@"I give an Empty JToken")]
+        public void WhenIGiveAnEmptyJToken()
+        {
+            _jToken = JToken.Parse("null");
+        }
 
-When(/^I give an Invalid JToken$/, () => {
-	return true;
-});
+        [Then(@"The JToken should be added to the dictionary")]
+        public void ThenTheJTokenShouldBeAddedToTheDictionary()
+        {
+            _responseObject.AddElementsToDictionary(_jToken, _dictionary, _parent);
+            var prop = _jToken.ToObject<JObject>()!.Properties().First().Name;
+            Assert.Contains(prop, _dictionary);
+        }
+        
+        [Then(@"The empty JToken should be added to the dictionary")]
+        public void ThenTheEmptyJTokenShouldBeAddedToTheDictionary()
+        {
+            _responseObject.AddElementsToDictionary(_jToken, _dictionary, _parent);
+            Assert.Contains(_parent, _dictionary);
+        }
 
-Then(/^It should throw an error$/, () => {
-	return true;
-});
+        [Then(@"It should throw an error")]
+        public void ThenItShouldThrowAnError()
+        {
+            Assert.Throws<NullReferenceException>(() => _responseObject.AddElementsToDictionary(_jToken, _dictionary, _parent));
+        }
 
-Given(/^The current dictionary has 0 elements in it$/, () => {
-	return true;
-});
+        // ------------------------- Get Typed Value -------------------------
+        
+        private object _value;
 
-Then(/^The String parent is filled$/, () => {
-	return true;
-});
+        [Given(@"The value is of a string")]
+        public void GivenTheValueIsOfAString()
+        {
+            _value = "TestString";
+        }
 
-When(/^I give an Valid JToken$/, () => {
-	return true;
-});
+        [Given(@"The value is of a User")]
+        public void GivenTheValueIsOfAUser()
+        {
+            _value = new { Name = "John", Age = 30 };
+        }
 
-Then(/^The dictionary should be empty$/, () => {
-	return true;
-});
+        [Given(@"The value is of a Int")]
+        public void GivenTheValueIsOfAInt()
+        {
+            _value = 42;
+        }
 
-Given(/^The value is of a string$/, () => {
-	return true;
-});
+        [Then(@"It should return String as a type")]
+        public void ThenItShouldReturnStringAsAType()
+        {
+            _customObject = new CustomObject(_value);
+            Object TypedValue = _customObject.GetTypedValue();
+            Assert.Equal(_value, TypedValue);
+        }
 
-Then(/^It should return String as a type$/, () => {
-	return true;
-});
+        [Then(@"It should return User as a type")]
+        public void ThenItShouldReturnUserAsAType()
+        {
+            _customObject = new CustomObject(_value);
+            Object TypedValue = _customObject.GetTypedValue();
+            Assert.Equal(_value, TypedValue);
+        }
 
-Given(/^The value is of a User$/, () => {
-	return true;
-});
+        [Then(@"It should return Int as a type")]
+        public void ThenItShouldReturnIntAsAType()
+        {
+            _customObject = new CustomObject(_value);
+            Object TypedValue = _customObject.GetTypedValue();
+            Assert.Equal(_value, TypedValue);
+        }
 
-Then(/^It should return User as a type$/, () => {
-	return true;
-});
+        // ------------------------- Add Element to JObject -------------------------
 
-Given(/^The value is of a Int$/, () => {
-	return true;
-});
+        /*private JObject _jObject;
+        private string _path;
+        
+        [Given(@"The JObject is empty")]
+        public void GivenTheJObjectIsEmpty()
+        {
+            _jObject = new JObject();
+        }
 
-Then(/^It should return Int as a type$/, () => {
-	return true;
-});
+        [Given(@"The JObject is nested")]
+        public void GivenTheJObjectIsNested()
+        {
+            _jObject = new JObject { ["Nested"] = new JObject() };
+        }
 
-Given(/^The JObject is empty$/, () => {
-	return true;
-});
+        [Given(@"The Path is empty")]
+        public void GivenThePathIsEmpty()
+        {
+            _path = string.Empty;
+        }
 
-Then(/^The Path is empty$/, () => {
-	return true;
-});
+        [Given(@"The Path is not empty")]
+        public void GivenThePathIsNotEmpty()
+        {
+            _path = "Nested.Path";
+        }
 
-When(/^I give a int ObjectValue$/, () => {
-	return true;
-});
+        [When(@"I give a int ObjectValue")]
+        public void WhenIGiveAIntObjectValue()
+        {
+            if (string.IsNullOrEmpty(_path)) return;
+            _jObject[_path] = 42;
+        }
 
-Then(/^It should do nothing$/, () => {
-	return true;
-});
+        [When(@"I give a Null ObjectValue")]
+        public void WhenIGiveANullObjectValue()
+        {
+            _jObject[_path ?? "nullValue"] = null;
+        }
 
-Given(/^The JObject is empty$/, () => {
-	return true;
-});
+        [When(@"I give a string ObjectValue")]
+        public void WhenIGiveAStringObjectValue()
+        {
+            _jObject[_path] = "TestString";
+        }
 
-Then(/^The Path is empty$/, () => {
-	return true;
-});
+        [Then(@"It should do nothing")]
+        public void ThenItShouldDoNothing()
+        {
+            _responseObjectDto.Add
+        }
 
-When(/^I give a Null ObjectValue$/, () => {
-	return true;
-});
+        [Then(@"It should add null to JObject")]
+        public void ThenItShouldAddNullToJObject()
+        {
+            Assert.IsTrue(_jObject.ContainsKey("nullValue"));
+        }
 
-Then(/^It should add null to JObject$/, () => {
-	return true;
-});
+        [Then(@"It should add string to JObject")]
+        public void ThenItShouldAddStringToJObject()
+        {
+            Assert.AreEqual("TestString", _jObject.SelectToken(_path).ToString());
+        }*/
 
-Given(/^The JObject is nested$/, () => {
-	return true;
-});
+        // ------------------------- Deserialize Data -------------------------
 
-Then(/^The Path is not empty$/, () => {
-	return true;
-});
+        /*[Given(@"The ByteArray is encoded wrong")]
+        public void GivenTheByteArrayIsEncodedWrong()
+        {
+            _byteArray = new byte[] { 0xFF, 0x00 }; // Invalid UTF-8 encoding
+        }
 
-When(/^I give a string ObjectValue$/, () => {
-	return true;
-});
+        [Given(@"The ByteArray is encoded correct")]
+        public void GivenTheByteArrayIsEncodedCorrect()
+        {
+            _byteArray = System.Text.Encoding.UTF8.GetBytes("{}");
+        }
 
-Then(/^It should add string to JObject$/, () => {
-	return true;
-});
+        [Then(@"Gives an empty dictionary")]
+        public void ThenGivesAnEmptyDictionary()
+        {
+            var result = JObject.Parse(System.Text.Encoding.UTF8.GetString(_byteArray));
+            Assert.IsEmpty(result);
+        }
 
-Given(/^The ByteArray is encoded wrong$/, () => {
-	return true;
-});
+        [Then(@"Throw an error")]
+        public void ThenThrowAnError()
+        {
+            Assert.Throws<Exception>(() => JObject.Parse(System.Text.Encoding.UTF8.GetString(_byteArray)));
+        }
 
-Then(/^The dictionary is empty$/, () => {
-	return true;
-});
+        [Then(@"Gives an filled dictionary")]
+        public void ThenGivesAnFilledDictionary()
+        {
+            var result = JObject.Parse(System.Text.Encoding.UTF8.GetString(_byteArray));
+            Assert.IsNotEmpty(result);
+        }
 
-Then(/^Throw an error$/, () => {
-	return true;
-});
+        // ------------------------- From Json -------------------------
 
-Given(/^The ByteArray is encoded correct$/, () => {
-	return true;
-});
+        [Given(@"The Json is structered correct")]
+        public void GivenTheJsonIsStructuredCorrect()
+        {
+            _value = "{\"key\":\"value\"}";
+        }
 
-Then(/^The dictionary is empty$/, () => {
-	return true;
-});
+        [Given(@"The Json is not structered correct")]
+        public void GivenTheJsonIsNotStructuredCorrect()
+        {
+            _value = "{invalidJson}";
+        }
 
-Then(/^Gives an empty dictionary$/, () => {
-	return true;
-});
+        [Then(@"It gives a dictionary")]
+        public void ThenItGivesADictionary()
+        {
+            var result = JObject.Parse((string)_value);
+            Assert.IsNotEmpty(result);
+        }
 
-Given(/^The ByteArray is encoded correct$/, () => {
-	return true;
-});
-
-Then(/^The dictionary is not empty$/, () => {
-	return true;
-});
-
-Then(/^Gives an filled dictionary$/, () => {
-	return true;
-});
-
-Given(/^The ByteArray is encoded correct$/, () => {
-	return true;
-});
-
-Then(/^The dictionary is not empty$/, () => {
-	return true;
-});
-
-Then(/^Throw an error$/, () => {
-	return true;
-});
-
-Given(/^The Json is structered correct$/, () => {
-	return true;
-});
-
-Then(/^It gives a dictionary$/, () => {
-	return true;
-});
-
-Given(/^The Json is not structered correct$/, () => {
-	return true;
-});
-
-Then(/^Throw an error$/, () => {
-	return true;
-});
-
-Given(/^The Json is structered correct$/, () => {
-	return true;
-});
-
-Then(/^It gives an empty dictionary$/, () => {
-	return true;
-});
-
-Given(/^The Dictionary is empty$/, () => {
-	return true;
-});
-
-Then(/^Gives a empty JObject$/, () => {
-	return true;
-});
-
-Given(/^The Dictionary is filled$/, () => {
-	return true;
-});
-
-Then(/^Gives a filled JObject$/, () => {
-	return true;
-});
+        [Then(@"It gives an empty dictionary")]
+        public void ThenItGivesAnEmptyDictionary()
+        {
+            var result = JObject.Parse((string)_value);
+            Assert.IsEmpty(result);
+        }*/
+        
+        // ------------------------- Convert Dictionary To JObject -------------------------
+        
+        [Given(@"The Dictionary is empty")]
+        public void GivenTheDictionaryIsEmpty()
+        {
+            _dictionary = new Dictionary<string, CustomObject>();
+        }
+        
+        [Given(@"The Dictionary is filled")]
+        public void GivenTheDictionaryIsFilled()
+        {
+            _dictionary = new Dictionary<string, CustomObject>
+            {
+                { "Key1", new CustomObject(1) },
+                { "Key2", new CustomObject(2) }
+            };
+        }
+        
+        [Then(@"Gives a empty JObject")]
+        public void ThenItShouldReturnAnEmptyJObject()
+        {
+            _responseObjectDto.Data = _dictionary;
+            var result = _responseObjectDto.ToJson();
+            Assert.Equal("{}", result);
+        }
+        
+        [Then(@"Gives a filled JObject")]
+        public void ThenItShouldReturnAFilledJObject()
+        {
+            _responseObjectDto.Data = _dictionary;
+            var result = _responseObjectDto.ToJson();
+            
+            var expectedJson = JObject.Parse(@"{""Key1"":1,""Key2"":2}");
+            var actualJson = JObject.Parse(result);
+            
+            Assert.True(JToken.DeepEquals(expectedJson, actualJson), "The Jsons are not equal");
+        }
+    }
+}
