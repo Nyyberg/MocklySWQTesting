@@ -2,6 +2,8 @@
 using Newtonsoft.Json.Linq;
 using Infrastructure.Entities;
 using Assert = Xunit.Assert;
+using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace TestProject.StepDefinitions
 {
@@ -199,10 +201,18 @@ namespace TestProject.StepDefinitions
 
         // ------------------------- Deserialize Data -------------------------
 
-        /*[Given(@"The ByteArray is encoded wrong")]
+        private byte[] _byteArray;
+
+        [Given(@"The ByteArray is encoded wrong")]
         public void GivenTheByteArrayIsEncodedWrong()
         {
             _byteArray = new byte[] { 0xFF, 0x00 }; // Invalid UTF-8 encoding
+        }
+
+        [Given(@"The ByteArray is zero")]
+        public void GivenTheByteArrayIsZero()
+        {
+            _byteArray = new byte[0];
         }
 
         [Given(@"The ByteArray is encoded correct")]
@@ -211,53 +221,105 @@ namespace TestProject.StepDefinitions
             _byteArray = System.Text.Encoding.UTF8.GetBytes("{}");
         }
 
+        [Given(@"The ByteArray is encoded correct with data")]
+        public void GivenTheByteArrayIsEncodedCorrectWithData()
+        {
+            Dictionary<string, CustomObject> data = new Dictionary<string, CustomObject>();
+            for (int i = 0; i < 100; i++) 
+            {
+                data.Add(i.ToString(), new CustomObject(i));
+            }
+            var json = JsonConvert.SerializeObject(data);
+            _byteArray = System.Text.Encoding.UTF8.GetBytes(json);
+        }
+
         [Then(@"Gives an empty dictionary")]
         public void ThenGivesAnEmptyDictionary()
         {
-            var result = JObject.Parse(System.Text.Encoding.UTF8.GetString(_byteArray));
-            Assert.IsEmpty(result);
+            _responseObject = new ResponseObject();
+            _responseObject.Data = _byteArray;
+            var result = _responseObject.DeserializeData();
+            Assert.Empty(result);
         }
 
         [Then(@"Throw an error")]
         public void ThenThrowAnError()
         {
-            Assert.Throws<Exception>(() => JObject.Parse(System.Text.Encoding.UTF8.GetString(_byteArray)));
+            _responseObject = new ResponseObject();
+            _responseObject.Data = _byteArray;
+
+            Assert.Throws<System.Text.Json.JsonException>(() => {
+                var result = _responseObject.DeserializeData();
+            });
+        }
+
+        [Then(@"Throw an error exception")]
+        public void ThenThrowAnErrorException()
+        {
+            _responseObject = new ResponseObject();
+            _responseObject.Data = _byteArray;
+
+            Assert.Throws<System.Text.Json.JsonException>(() => {
+                var result = _responseObject.DeserializeData();
+            });
         }
 
         [Then(@"Gives an filled dictionary")]
         public void ThenGivesAnFilledDictionary()
         {
-            var result = JObject.Parse(System.Text.Encoding.UTF8.GetString(_byteArray));
-            Assert.IsNotEmpty(result);
+            _responseObject = new ResponseObject();
+            _responseObject.Data = _byteArray;
+            var result = _responseObject.DeserializeData();
+            Assert.NotEmpty(result);
         }
 
         // ------------------------- From Json -------------------------
+        private JsonElement _element;
+        private byte[] _jsonbyte;
+
 
         [Given(@"The Json is structered correct")]
         public void GivenTheJsonIsStructuredCorrect()
         {
-            _value = "{\"key\":\"value\"}";
+           var result = JsonConvert.SerializeObject("Int");
+            
+            _element = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(result);
+            _jsonbyte = Encoding.UTF8.GetBytes(_element.ToString());
         }
 
+        [Given(@"The Json is structered correct but empty")]
+        public void GivenTheJsonIsStructuredCorrectButEmpty()
+        {
+            var result = JsonConvert.SerializeObject(null);
+
+            _element = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(result);
+            _jsonbyte = Encoding.UTF8.GetBytes(_element.ToString());
+        }
+
+        /*
         [Given(@"The Json is not structered correct")]
         public void GivenTheJsonIsNotStructuredCorrect()
         {
-            _value = "{invalidJson}";
+            var result = JsonConvert.SerializeObject("Int");
+            JObject jb = JObject.Parse(result);
+
+            _element = JsonConvert.DeserializeObject<JsonElement>(jb.ToString());
         }
+        */
 
         [Then(@"It gives a dictionary")]
         public void ThenItGivesADictionary()
         {
-            var result = JObject.Parse((string)_value);
-            Assert.IsNotEmpty(result);
+            var result = ResponseObject.FromJson(_element);
+            Assert.Equal(_jsonbyte, result.Data);
         }
 
         [Then(@"It gives an empty dictionary")]
         public void ThenItGivesAnEmptyDictionary()
         {
-            var result = JObject.Parse((string)_value);
-            Assert.IsEmpty(result);
-        }*/
+            var result = ResponseObject.FromJson(_element);
+            Assert.Equal(_jsonbyte, result.Data);
+        }
         
         // ------------------------- Convert Dictionary To JObject -------------------------
         
